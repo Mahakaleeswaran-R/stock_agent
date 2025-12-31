@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -9,11 +8,7 @@ class TradeCard extends StatefulWidget {
   final TradeSignal signal;
   final VoidCallback onDelete;
 
-  const TradeCard({
-    super.key,
-    required this.signal,
-    required this.onDelete,
-  });
+  const TradeCard({super.key, required this.signal, required this.onDelete});
 
   @override
   State<TradeCard> createState() => _TradeCardState();
@@ -22,29 +17,14 @@ class TradeCard extends StatefulWidget {
 class _TradeCardState extends State<TradeCard> {
   late Timer _timer;
   late Duration _timeLeft;
-  late double _limitPrice;
 
   @override
   void initState() {
     super.initState();
-    _parseDetails();
     _calculateTimeLeft();
     _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
       _calculateTimeLeft();
     });
-  }
-
-  void _parseDetails() {
-    try {
-      if (widget.signal.fullJson.isNotEmpty) {
-        final data = jsonDecode(widget.signal.fullJson);
-        _limitPrice = data['limit_price']?.toDouble() ?? 0.0;
-      } else {
-        _limitPrice = 0.0;
-      }
-    } catch (e) {
-      _limitPrice = 0.0;
-    }
   }
 
   void _calculateTimeLeft() {
@@ -71,7 +51,9 @@ class _TradeCardState extends State<TradeCard> {
   @override
   Widget build(BuildContext context) {
     final isBuy = widget.signal.signal == 'BUY';
-    final formattedDate = DateFormat('dd MMM HH:mm:ss').format(widget.signal.timestamp);
+    final formattedDate = DateFormat(
+      'dd MMM HH:mm:ss',
+    ).format(widget.signal.timestamp);
     final hoursLeft = _timeLeft.inHours;
     final neonColor = isBuy ? const Color(0xFF00E676) : const Color(0xFFFF5252);
     final bgGradient = isBuy
@@ -93,7 +75,7 @@ class _TradeCardState extends State<TradeCard> {
             color: neonColor.withOpacity(0.15),
             blurRadius: 20,
             offset: const Offset(0, 8),
-          )
+          ),
         ],
       ),
       child: ClipRRect(
@@ -124,7 +106,6 @@ class _TradeCardState extends State<TradeCard> {
             Padding(
               padding: const EdgeInsets.all(10.0),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -137,7 +118,11 @@ class _TradeCardState extends State<TradeCard> {
                               color: neonColor.withOpacity(0.2),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Icon(isBuy ? Icons.trending_up : Icons.trending_down, color: neonColor, size: 15),
+                            child: Icon(
+                              isBuy ? Icons.trending_up : Icons.trending_down,
+                              color: neonColor,
+                              size: 15,
+                            ),
                           ),
                           const SizedBox(width: 12),
                           Column(
@@ -157,7 +142,7 @@ class _TradeCardState extends State<TradeCard> {
                                 ],
                               ),
                               Text(
-                                "${widget.signal.tier} CONFIDENCE",
+                                "${widget.signal.tier} TIER",
                                 style: GoogleFonts.inter(
                                   color: neonColor,
                                   fontSize: 8,
@@ -169,85 +154,76 @@ class _TradeCardState extends State<TradeCard> {
                           ),
                         ],
                       ),
-                      Column(
+                      Row(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.black45,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: Colors.white12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.notifications_on, color: Colors.white60, size: 10),
-                                const SizedBox(width: 4),
-                                Text(
-                                  formattedDate,
-                                  style: const TextStyle(color: Colors.white60, fontSize: 10),
-                                ),
-                              ],
-                            ),
+                          _buildTitleBadge(
+                            formattedDate,
+                            Icons.notifications_on,
+                            isBuy,
                           ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.black45,
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(color: Colors.white12),
-                                ),
-                                child:  Text(
-                                    widget.signal.source,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.white60,
-                                    ),
-                                  ),
-                              ),
-                              const SizedBox(width: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.black45,
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(color: Colors.white12),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.timer_outlined, color: Colors.white60, size: 10),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      "${hoursLeft}h",
-                                      style: const TextStyle(color: Colors.white60, fontSize: 10),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                          const SizedBox(width: 6),
+                          _buildTitleBadge(
+                            "${hoursLeft} hr",
+                            Icons.timer_outlined,
+                            isBuy,
                           ),
                         ],
                       ),
                     ],
                   ),
-                  
                   Divider(color: Colors.white.withOpacity(0.1)),
-                                    Row(
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildDataPoint("ENTRY PRICE", widget.signal.entry, Colors.white),
+                      _buildDataPoint(
+                        "ENTRY PRICE",
+                        widget.signal.entry,
+                        Colors.white,
+                      ),
                       const SizedBox(width: 8),
-                      _buildDataPoint("MAX LIMIT", _limitPrice, Colors.white),
+                      Column(
+                        children: [
+                          Text(
+                            "TARGETS",
+                            style: GoogleFonts.inter(
+                              color: Colors.white60,
+                              fontSize: 8,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _buildTarget(
+                                widget.signal.t1,
+                                widget.signal.entry,
+                                isBuy,
+                              ),
+                              const SizedBox(width: 8),
+                              _buildTarget(
+                                widget.signal.t2,
+                                widget.signal.entry,
+                                isBuy,
+                              ),
+                              const SizedBox(width: 8),
+                              _buildTarget(
+                                widget.signal.t3,
+                                widget.signal.entry,
+                                isBuy,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                       const SizedBox(width: 8),
-                      _buildDataPoint("TARGET", widget.signal.target, const Color(0xFF69F0AE)),
-                      const SizedBox(width: 8),
-                      _buildDataPoint("STOP LOSS", widget.signal.stopLoss, const Color(0xFFFF8A80)),
+                      _buildDataPoint(
+                        "STOP LOSS",
+                        widget.signal.stopLoss,
+                        Colors.red.shade700,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 5),
@@ -263,26 +239,102 @@ class _TradeCardState extends State<TradeCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Icon(Icons.auto_awesome, color: neonColor, size: 14),
-                            const SizedBox(width: 6),
-                            Text(
-                              "AI CATALYST",
-                              style: GoogleFonts.inter(color: Colors.white60, fontSize: 10, fontWeight: FontWeight.bold),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.bubble_chart,
+                                  color: neonColor,
+                                  size: 14,
+                                ),
+                                const SizedBox(width: 1),
+                                Text(
+                                  "ANALYST",
+                                  style: GoogleFonts.inter(
+                                    color: Colors.white60,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const Spacer(),
-                            Text(
-                              "RSI ${widget.signal.rsi}",
-                              style: GoogleFonts.robotoMono(color: Colors.white60, fontSize: 10, fontWeight: FontWeight.bold),
+                            Row(
+                              children: [
+                                _buildConfidenceBadge(
+                                  widget.signal.aiConfidence,
+                                  Icons.auto_awesome,
+                                  isBuy,
+                                ),
+                                const SizedBox(width: 6),
+                                _buildConfidenceBadge(
+                                  widget.signal.techConfidence,
+                                  Icons.bar_chart,
+                                  isBuy,
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                        const SizedBox(height: 3),
-                        Text(
-                          widget.signal.reason,
-                          style: GoogleFonts.inter(color: Colors.white, fontSize: 10, height: 1.4, letterSpacing: 0.5),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                        const SizedBox(height: 5),
+                        Container(
+                          width: double.infinity,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      widget.signal.reason,
+                                      style: GoogleFonts.inter(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (widget.signal.pdfSummary.isNotEmpty) ...[
+                                const SizedBox(height: 5),
+                                ...widget.signal.pdfSummary
+                                    .take(3)
+                                    .map(
+                                      (point) => Padding(
+                                        padding: const EdgeInsets.only(
+                                          bottom: 4,
+                                        ),
+                                        child: Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            const Text(
+                                              "• ",
+                                              style: TextStyle(
+                                                color: Colors.white70,
+                                                fontSize: 10,
+                                              ),
+                                            ),
+                                            Expanded(
+                                              child: Text(
+                                                point,
+                                                style: GoogleFonts.inter(
+                                                  color: Colors.white70,
+                                                  fontSize: 10,
+                                                  height: 1.3,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                              ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -297,7 +349,10 @@ class _TradeCardState extends State<TradeCard> {
   }
 
   Widget _buildDataPoint(String label, double value, Color color) {
-    final currencyFormat = NumberFormat.simpleCurrency(name: 'INR', decimalDigits: 2);
+    final currencyFormat = NumberFormat.simpleCurrency(
+      name: 'INR',
+      decimalDigits: 2,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -318,6 +373,79 @@ class _TradeCardState extends State<TradeCard> {
             fontSize: 10,
             fontWeight: FontWeight.bold,
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildConfidenceBadge(double value, IconData icon, bool isBuy) {
+    final color = isBuy ? Colors.green : Colors.red;
+    return Container(
+      padding: const EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 10),
+          const SizedBox(width: 4),
+          Text(
+            "${(value * 100).toInt()}%",
+            style: GoogleFonts.inter(
+              color: Colors.white70,
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTitleBadge(String value, IconData icon, bool isBuy) {
+    final color = isBuy ? Colors.green : Colors.red;
+    return Container(
+      padding: const EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 10),
+          const SizedBox(width: 4),
+          Text(
+            value,
+            style: GoogleFonts.inter(
+              color: Colors.white70,
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTarget(double val, double entry, bool isBuy) {
+    if (val == 0) return const SizedBox();
+    final pct = entry > 0 ? ((val - entry) / entry * 100).abs() : 0.0;
+    return Column(
+      children: [
+        Text(
+          val.toStringAsFixed(2),
+          style: GoogleFonts.robotoMono(
+            color: Colors.green,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          "${pct.toStringAsFixed(1)}%",
+          style: GoogleFonts.inter(color: Colors.white38, fontSize: 10),
         ),
       ],
     );
